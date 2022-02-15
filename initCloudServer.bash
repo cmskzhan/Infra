@@ -19,5 +19,5 @@ echo "4. add streamlit, pandas"
   python -m pip install --upgrade pip
   pip3 install streamlit
 echo "5. install AWS cli"
-  pip3 install awscli --upgrade --user
+  pip3 install awscli --upgrade
 echo "test docker by logging out/in and run  sudo docker run hello-world"
