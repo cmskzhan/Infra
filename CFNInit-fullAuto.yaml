@@ -11,6 +11,11 @@ Mappings:
     ap-southeast-2:
       AMI: ami-43874721    
 Resources:
+  # PrivateKey:
+  #   Type: Custom::RSAKey
+  #   Properties:
+  #     Name: /demo/private-key
+  #     ServiceToken: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:binxio-cfn-secret-provider'
   EC2Instance:
     Type: AWS::EC2::Instance
     Metadata: 
@@ -20,6 +25,7 @@ Resources:
                 - install_docker
                 - install_compose
                 - enable_compose
+                - install_git
         install_docker:
             packages:
                 yum:
@@ -43,6 +49,13 @@ Resources:
             commands:
                 enable_for_ec2_user:
                     command: chmod +x /usr/local/bin/docker-compose; ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+        install_git:
+            packages:
+                yum:
+                    git: []
+            commands:
+                git_clone_helloworld:
+                    command: git clone https://github.com/cmskzhan/helloworld.git /home/ec2-user/helloworld
     Properties:
       InstanceType: t2.micro
       ImageId:
@@ -84,6 +97,10 @@ Resources:
       - IpProtocol: tcp
         FromPort: '443'
         ToPort: '443'
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: '8080'
+        ToPort: '8080'
         CidrIp: 0.0.0.0/0
 Outputs:
   Website:
