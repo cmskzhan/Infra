@@ -1,7 +1,7 @@
 Parameters:
-  VpcId:
-    Description: Enter the VpcId
-    Type: AWS::EC2::VPC::Id
+  # VpcId:
+  #   Description: Enter the VpcId
+  #   Type: AWS::EC2::VPC::Id
 Mappings:
   RegionMap:
     us-east-1:
@@ -94,7 +94,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Open Ports ssh, web
-      VpcId: !Ref VpcId
+      # VpcId: !Ref VpcId
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: '22'
