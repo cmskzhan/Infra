@@ -45,29 +45,41 @@ Resources:
     Properties:
       AvailabilityZones: !GetAZs
       LaunchConfigurationName: !Ref LaunchConfiguration
-      MinSize: 2
+      MinSize: 1
       MaxSize: 3
       TargetGroupARNs: 
         - !Ref TargetGroup
   LaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Metadata: 
-      Comment: Install php and httpd
+      Comment: Install docker and git
       AWS::CloudFormation::Init:
         config: 
           packages: 
             yum:
-              httpd: []
-              php: []
-          files: 
-            /var/www/html/index.php:
-              content: !Sub |
-                <?php print "Hello world Abs was here!"; ?>
+              docker: []
+              git: []
+          # files: 
+          #   /var/www/html/index.php:
+          #     content: !Sub |
+          #       <?php print "Hello world Abs was here!"; ?>
           services: 
             sysvinit:
-              httpd:
+              docker:
                 enabled: true
                 ensureRunning: true
+          configSets:
+            default:
+              - install_compose
+              - enable_compose
+          install_compose:
+            commands:
+                compose_for_ec2_user:
+                    command: curl -L https://github.com/docker/compose/releases/download/1.20.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+          enable_compose:
+            commands:
+                enable_for_ec2_user:
+                    command: chmod +x /usr/local/bin/docker-compose; ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
     Properties:
       KeyName: t1
       InstanceType: t2.micro
@@ -86,6 +98,13 @@ Resources:
             yum install -y aws-cfn-bootstrap
             # Install the files and packages from the metadata
             /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+            usermod -G docker ec2-user
+            curl -L https://github.com/docker/compose/releases/download/1.20.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+            chmod +x /usr/local/bin/docker-compose
+            git clone https://github.com/cmskzhan/helloworld.git /home/ec2-user/helloworld
+            cd /home/ec2-user/helloworld/concepts/python/dockerfile && /usr/local/bin/docker-compose up -d
+            # All done so signal success
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource LaunchConfiguration --region ${AWS::Region}
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
