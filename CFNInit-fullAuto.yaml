@@ -1,3 +1,7 @@
+Parameters:
+  VpcId:
+    Description: Enter the VpcId
+    Type: AWS::EC2::VPC::Id
 Mappings:
   RegionMap:
     us-east-1:
@@ -26,6 +30,7 @@ Resources:
                 - install_compose
                 - enable_compose
                 - install_git
+                - start_streamlit
         install_docker:
             packages:
                 yum:
@@ -56,6 +61,10 @@ Resources:
             commands:
                 git_clone_helloworld:
                     command: git clone https://github.com/cmskzhan/helloworld.git /home/ec2-user/helloworld
+        start_streamlit:
+            commands:
+                docker_compose_up:
+                    command: cd /home/ec2-user/helloworld/concepts/python/dockerfile; docker-compose up -d
     Properties:
       InstanceType: t2.micro
       ImageId:
@@ -78,13 +87,14 @@ Resources:
             # Install the files and packages from the metadata
             /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EC2Instance  --region ${AWS::Region}
             # All done so signal success
-            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource host1 --region ${AWS::Region}
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource EC2Instance --region ${AWS::Region}
             # chmod +x /usr/local/bin/docker-compose
             # ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
   MySecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Open Ports ssh, web
+      VpcId: !Ref VpcId
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: '22'
