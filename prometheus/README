@@ -1,0 +1,4 @@
+docker run -p 30000:9090 -d -v ~/prometheus:/etc/prometheus --name prometheus  prom/prometheus
+
+http://d2d67d727e1c.mylabserver.com:30000/
+curl localhost:30000/api/v1/status/config
