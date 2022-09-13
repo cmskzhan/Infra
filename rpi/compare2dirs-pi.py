@@ -43,13 +43,16 @@ def compare_files_sizes(dir1, dir2) -> None:
 
 
 if __name__ == "__main__":
-    #compare_files(dir1, dir2)
-    input_source_dir = input("Enter source directory: ")
-    input_target_dir = input("Enter target directory: ")
+    
+    source_folder = "/mnt/4thdd/download/18plus/thread*"
+    target_folder = "/mnt/usbdisk/n/pix/thread*"
+    input_source_dir = input("Enter source directory: </mnt/4thdd/download/18plus/thread*> ") or source_folder
+    input_target_dir = input("Enter target directory: </mnt/usbdisk/n/pix/thread*> ") or target_folder
 
     if "*" in input_source_dir or "*" in input_target_dir:     # if input contains asterisk, use glob
         compare_folders(input_source_dir, input_target_dir)
     else:
         compare_files_sizes(input_source_dir, input_target_dir)
+        compare_files_sizes(input_target_dir, input_source_dir)
 
 
