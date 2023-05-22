@@ -10,8 +10,9 @@ aws ec2 create-security-group --description "cli created 2ndary" --group-name "t
 aws ec2 authorize-security-group-ingress --group-name "tt1" --protocol tcp --port 22 --cidr 0.0.0.0/0 --profile temp1
 aws ec2 authorize-security-group-ingress --group-name "tt1" --protocol tcp --port 443 --cidr 0.0.0.0/0 --profile temp1
 aws ec2 authorize-security-group-ingress --group-name "tt1" --protocol tcp --port 80 --cidr 0.0.0.0/0 --profile temp1
-# TODO might also need to check if outbound is allowed
-
+aws ec2 authorize-security-group-ingress --group-name "tt1" --protocol tcp --port 8888 --cidr 0.0.0.0/0 --profile temp1
+# check if outbound is allowed
+aws ec2 describe-security-groups --group-name "tt1" --profile temp1
 # create new instance
 aws ec2 run-instances --image-id ami-08e2d37b6a0129927 --count 1 --instance-type t2.micro --key-name att1t3 --security-groups tt1 --profile temp1
 sleep 10
