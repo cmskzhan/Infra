@@ -67,17 +67,28 @@ resource "aws_key_pair" "tf_test_key" {
   public_key = file("~/.ssh/id_rsa.pub")
 }
 
+resource "aws_s3_bucket" "videos" {
+  # bucket = "${var.bucket_name}-${formatdate("YYYYMMDDhhmm", timestamp())}"
+  bucket = var.bucket_name
+  tags   = {Description = "YC-resilio-videos"}
+}
+
 resource "aws_instance" "silioSync" {
   ami = var.ami_freetier["amazon-linux"]
   instance_type = "t2.micro"
   key_name      = aws_key_pair.tf_test_key.key_name
   user_data = <<-EOF
     #!/bin/bash
+    sudo mkdir /mnt/s3
+    sudo amazon-linux-extras install docker epel -y
     sudo yum update -y
-    sudo amazon-linux-extras install docker -y
-    sudo systemctl enable docker
+    sudo yum install -y s3fs-fuse
     sudo systemctl start docker
     sudo usermod -a -G docker ec2-user
+    sudo echo "${var.aws_access_key}:${var.aws_secret_key}" > /home/ec2-user/.passwd-s3fs
+    sudo chmod 600 /home/ec2-user/.passwd-s3fs
+    sudo s3fs ${var.bucket_name} /mnt/s3 -o passwd_file=/home/ec2-user/.passwd-s3fs,nonempty,rw,allow_other,mp_umask=002,uid=1000,gid=1000
+    sudo echo "test test" > /mnt/s3/test.txt
     sudo docker run -d --name silio-sync -p 8888:8888 -p 55555:55555 --restart always resilio/sync
   EOF
 
@@ -87,10 +98,7 @@ resource "aws_instance" "silioSync" {
   security_groups = [aws_security_group.resilio-web.name] # not aws_security_group.resilio-web.id
 }
 
-resource "aws_s3_bucket" "videos" {
-  bucket = "${var.bucket_name}-${formatdate("YYYYMMDDhhmmss", timestamp())}"
-  tags   = {Description = "YC-resilio-videos"}
-}
+
 
 output "ssh_command" {
   value = "ssh ec2-user@${aws_instance.silioSync.public_ip}"
