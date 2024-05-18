@@ -6,17 +6,15 @@ terraform {
       version = "~> 4.16"
     }
   } 
-}
-
-data "terraform_remote_state" "kai-testing" {
-  backend = "remote"
-  config = {
+  backend "remote" {
     organization = "kai-testing"
-    workspace = {
+    workspace {
       name = "Infra"
     }
   }
 }
+
+
 
 
 provider "aws" {
@@ -90,8 +88,6 @@ resource "aws_instance" "silioSync" {
   ami = var.ami_freetier["amazon-linux"]
   instance_type = "t2.micro"
   key_name      = aws_key_pair.generated_key.key_name
-  aws_access_key = data.terraform_remote_state.kai-testing.aws_access_key
-  aws_secret_key = data.terraform_remote_state.kai-testing.aws_secret_key
   user_data = <<-EOF
     #!/bin/bash
     sudo mkdir /mnt/s3
