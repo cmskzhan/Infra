@@ -13,8 +13,10 @@ variable "ami_freetier" {
 }
 
 variable "aws_access_key" {
-    default = var("aws_access_key")
+    type = string
+    default = "AKIAX5TPQ6WOEDR6S6MT"
 }
 variable "aws_secret_key" {
-    default = var("aws_secret_key")
+    type = string
+    default = ""
 }
