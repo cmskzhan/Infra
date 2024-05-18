@@ -103,7 +103,7 @@ resource "aws_instance" "silioSync" {
 resource "aws_instance" "streamlit" {
   ami = var.ami_freetier["rhel"]
   instance_type = "t2.micro"
-  key_name      = aws_key_pair.tf_test_key.key_name
+  key_name      = aws_key_pair.generated_key.key_name
   user_data = <<-EOF
     #!/bin/bash
     sudo yum update -y
