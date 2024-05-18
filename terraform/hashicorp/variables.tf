@@ -11,3 +11,6 @@ variable "ami_freetier" {
         "amazon-linux" = "ami-01acac09adf473073"
     }  
 }
+
+variable "aws_access_key" {}
+variable "aws_secret_key" {}
