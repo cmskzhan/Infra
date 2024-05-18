@@ -13,8 +13,10 @@ variable "ami_freetier" {
 }
 
 variable "aws_access_key" {
-    default = env("key")
+    type = string
+    default = "AKIAX5TPQ6WOEDR6S6MT"
 }
 variable "aws_secret_key" {
-    default = env("secret")
+    type = string
+    default = ""
 }
