@@ -6,12 +6,6 @@ terraform {
       version = "~> 4.16"
     }
   } 
-  backend "remote" {
-    organization = "kai-testing"
-    workspace {
-      name = "Infra"
-    }
-  }
 }
 
 
@@ -133,9 +127,4 @@ resource "aws_instance" "streamlit" {
 
 output "ssh_command" {
   value = "ssh ec2-user@${aws_instance.streamlit.public_ip}"
-}
-
-output "temp_private_key" {
-  value = tls_private_key.temp_key.private_key_pem
-  sensitive = false
 }
