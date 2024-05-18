@@ -59,9 +59,14 @@ resource "aws_security_group" "resilio-web" {
   }
 }
 
-resource "aws_key_pair" "tf_test_key" {
-  key_name   = "tf_test_key"
-  public_key = file("~/.ssh/id_rsa.pub")
+resource "tls_private_key" "temp_key" {
+  algorithm = "RSA"
+  rsa_bits = 4096
+}
+
+resource "aws_key_pair" "generated_key" {
+  key_name   = "tf_test_generated_key"
+  public_key = tls_private_key.temp_key.public_key_openssh
 }
 
 resource "aws_s3_bucket" "videos" {
@@ -73,7 +78,7 @@ resource "aws_s3_bucket" "videos" {
 resource "aws_instance" "silioSync" {
   ami = var.ami_freetier["amazon-linux"]
   instance_type = "t2.micro"
-  key_name      = aws_key_pair.tf_test_key.key_name
+  key_name      = aws_key_pair.generated_key.key_name
   user_data = <<-EOF
     #!/bin/bash
     sudo mkdir /mnt/s3
@@ -119,4 +124,9 @@ resource "aws_instance" "streamlit" {
 
 output "ssh_command" {
   value = "ssh ec2-user@${aws_instance.streamlit.public_ip}"
+}
+
+output "temp_private_key" {
+  value = tls_private_key.temp_key.private_key_pem
+  sensitive = false
 }
