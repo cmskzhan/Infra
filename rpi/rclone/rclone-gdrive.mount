@@ -1,0 +1,18 @@
+# /etc/systemd/system/rclone-gdrive.mount
+[Unit]
+Description=Mount rclone Google Drive
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/rclone mount gdrive-gu214bj: /home/<your-username>/Documents/gdrive \
+    --config=/home/<your-username>/.config/rclone/rclone.conf \
+    --vfs-cache-mode writes
+ExecStop=/bin/fusermount -u /home/<your-username>/Documents/gdrive
+Restart=on-failure
+User=<your-username>
+Group=<your-username>
+
+[Install]
+WantedBy=default.target

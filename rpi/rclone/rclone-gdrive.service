@@ -1,0 +1,37 @@
+# /etc/systemd/system/rclone-gdrive.service
+[Unit]
+Description=Mount rclone Google Drive remote
+Requires=network-online.target
+After=network-online.target
+Wants=network-online.target
+Before=nfs-server.service
+
+[Service]
+Type=notify
+NotifyAccess=all
+ExecStart=/usr/bin/rclone mount gdrive-gu214bj: /home/kaizhang/Documents/gdrive \
+    --config=/home/kaizhang/.config/rclone/rclone.conf \
+    --allow-other \
+    --vfs-cache-mode writes \
+    --dir-cache-time 72h \
+    --poll-interval 0s \
+    --umask 002 \
+    --uid 1000 \
+    --gid 1000 \
+    --allow-non-empty \
+    --retries 5 
+#    --daemon  
+ExecStop=/bin/fusermount -uz /home/kaizhang/Documents/gdrive
+Restart=on-failure
+RestartSec=10
+TimeoutSec=30
+TimeoutStartSec=300
+User=kaizhang
+Group=kaizhang
+
+[Install]
+WantedBy=default.target
+
+# sudo systemctl daemon-reexec
+# sudo systemctl daemon-reload
+# sudo systemctl enable rclone-gdrive
