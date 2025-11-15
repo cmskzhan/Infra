@@ -1,0 +1,6 @@
+# --- 1. Personal GitHub Account (using id_rsa_personal) ---
+Host github-kaizhangyahoo
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/github_kaizhangyahoo
+    IdentitiesOnly yes
