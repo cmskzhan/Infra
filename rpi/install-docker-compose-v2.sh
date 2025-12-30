@@ -100,4 +100,3 @@ else
   echo "Try restarting your shell or running: hash -r" >&2
   exit 1
 fi
-
