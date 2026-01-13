@@ -1,0 +1,16 @@
+flowchart TD
+    Client --> REST_API
+    REST_API --> OTel_SDK
+    OTel_SDK --> OTel_Collector
+    OTel_Collector --> Prometheus
+    Prometheus --> Grafana
+    Grafana --> Prometheus
+
+
+%% sequenceDiagram
+%%     participant Client
+%%     participant REST_API as REST API
+%%     participant OTel_SDK as OpenTelemetry SDK
+%%     participant OTel_Collector as OpenTelemetry Collector
+%%     participant Prometheus
+%%     participant Grafana
