@@ -78,56 +78,54 @@ You can skip adding Tempo/Jaeger if your needs are limited to:
 In short: tracing is optional but highly recommended for multi-service environments where end-to-end request visibility matters.
 
 
+## Design decisions
 
-# OpenTelemetry, Prometheus, and Grafana Sequence Flow
+- Grafana Agent (grafana/agent) was chosen for this sample Raspberry Pi deployment because it's lightweight, easy to configure, and integrates well with Grafana, Loki and Tempo. It can receive OTLP traces and forward them to Tempo, push logs to Loki, and expose metrics for Prometheus scraping.
+- Note: Grafana Agent does not always implement the full OTLP gRPC Metrics service. In this setup traces are sent via OTLP gRPC to the agent (which works), but OTLP metrics via gRPC may return UNIMPLEMENTED. Two options:
+  1. Use the OTLP HTTP metrics exporter from your app (POST /v1/metrics to the agent's HTTP receiver).
+  2. Run a full OpenTelemetry Collector (otel-collector-contrib) which implements the OTLP gRPC Metrics service.
+- Important: the upstream otel/opentelemetry-collector-contrib image does not include a Loki exporter, so the sample otel-collector configuration was updated to remove the unsupported "loki" exporter. If you need to push logs to Loki, either:
+  - Use Grafana Agent (which includes a Loki client) to forward logs to Loki, or
+  - Push logs from your application directly to Loki's HTTP push API.
+  This avoids collector startup failures caused by unsupported exporter types.
+
+
+## OpenTelemetry, Prometheus, and Grafana Sequence Flow
 
 ```mermaid
-
-
-
 sequenceDiagram
-    %% Participants
     participant Client
-    participant REST_API as REST API
-    participant OTel_SDK as OpenTelemetry SDK
-    participant OTel_Collector as OpenTelemetry Collector
+    participant REST_API as "REST API (FastAPI)"
+    participant OTel_SDK as "OpenTelemetry SDK (app)"
+    participant OTel_Collector as "OTel Collector (otel-collector)"
+    participant Grafana_Agent as "Grafana Agent"
     participant Prometheus
-    participant Tempo/Jaeger
+    participant Tempo
     participant Loki
-    participant Elastic
-    participant Splunk
     participant Grafana
 
-    %% Request path and SDK generation
     Client->>REST_API: HTTP request
-    REST_API->>OTel_SDK: Generate spans/traces/metrics/logs
+    REST_API->>OTel_SDK: generate spans / metrics / logs
 
-    %% SDK exports to Collector
-    OTel_SDK->>OTel_Collector: Export via OTLP (gRPC/HTTP)
+    %% App -> Collector/Agent
+    OTel_SDK->>OTel_Collector: OTLP (traces/metrics/logs)
+    OTel_SDK->>Grafana_Agent: OTLP (traces) or expose metrics endpoint
 
-    %% Metrics path
-    OTel_Collector->>Prometheus: Metrics (remote_write) or expose scrape target
-    Prometheus-->>Grafana: Time-series data
+    %% Collector -> Backends
+    OTel_Collector->>Tempo: Traces (OTLP) / remote_write
+    OTel_Collector->>Prometheus: expose metrics (scrape target) or forward metrics
+    Grafana_Agent->>Tempo: Traces (OTLP)
+    Grafana_Agent->>Prometheus: exposes metrics endpoint (scrape target)
+    Grafana_Agent->>Loki: Logs (push)
+
+    %% Queries
     Grafana->>Prometheus: PromQL queries
-
-    %% Traces path
-    OTel_Collector->>Tempo/Jaeger: Traces (OTLP)
-    Grafana->>Tempo/Jaeger: Trace queries
-    Tempo/Jaeger-->>Grafana: Trace results
-
-    %% Logs paths
-    OTel_Collector->>Loki: Logs (OTLP)
+    Grafana->>Tempo: Trace queries
     Grafana->>Loki: Log queries
+
+    Tempo-->>Grafana: Trace results
+    Prometheus-->>Grafana: Time-series data
     Loki-->>Grafana: Log results
-
-    %% Optional enterprise log backends
-    OTel_Collector->>Elastic: Logs (OTLP/HTTP)
-    OTel_Collector->>Splunk: Logs (HEC/OTLP via bridge)
-
-    %% Optional queries (if configured)
-    Grafana-->>Elastic: (optional) Query via datasource plugin
-    %% Splunk is typically queried via Splunk UI; Grafana integration is uncommon
-
 ```
 ## License
 

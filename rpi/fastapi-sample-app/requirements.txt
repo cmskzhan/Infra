@@ -3,3 +3,5 @@ uvicorn
 opentelemetry-sdk 
 opentelemetry-instrumentation-fastapi 
 opentelemetry-exporter-otlp
+prometheus_client
+grpcio

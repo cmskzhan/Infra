@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   # OpenTelemetry Collector
-  otel-collector:
+  grafana-agent:
     image: grafana/agent:latest
     platform: linux/arm64
     container_name: grafana-agent
@@ -16,6 +16,21 @@ services:
     depends_on:
       - prometheus
       - loki
+      - tempo
+
+  # OpenTelemetry Collector (otel-collector) - accept OTLP metric pushes from laptops/clients
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    platform: linux/arm64
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4319:4318"   # host 4319 -> container OTLP HTTP 4318 (push target for app)
+    restart: unless-stopped
+    depends_on:
+      - prometheus
       - tempo
 
   # Prometheus
