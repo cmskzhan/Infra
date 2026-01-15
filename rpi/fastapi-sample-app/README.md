@@ -80,14 +80,14 @@ In short: tracing is optional but highly recommended for multi-service environme
 
 ## Design decisions
 
-- Grafana Agent (grafana/agent) was chosen for this sample Raspberry Pi deployment because it's lightweight, easy to configure, and integrates well with Grafana, Loki and Tempo. It can receive OTLP traces and forward them to Tempo, push logs to Loki, and expose metrics for Prometheus scraping.
-- Note: Grafana Agent does not always implement the full OTLP gRPC Metrics service. In this setup traces are sent via OTLP gRPC to the agent (which works), but OTLP metrics via gRPC may return UNIMPLEMENTED. Two options:
-  1. Use the OTLP HTTP metrics exporter from your app (POST /v1/metrics to the agent's HTTP receiver).
-  2. Run a full OpenTelemetry Collector (otel-collector-contrib) which implements the OTLP gRPC Metrics service.
-- Important: the upstream otel/opentelemetry-collector-contrib image does not include a Loki exporter, so the sample otel-collector configuration was updated to remove the unsupported "loki" exporter. If you need to push logs to Loki, either:
-  - Use Grafana Agent (which includes a Loki client) to forward logs to Loki, or
-  - Push logs from your application directly to Loki's HTTP push API.
-  This avoids collector startup failures caused by unsupported exporter types.
+- This sample uses **Grafana Alloy** (running as the `grafana-agent` service) as a single collector on a Raspberry Pi.
+- The app sends OTLP traces/metrics/logs to Alloy, and Alloy fans out:
+  - **Traces** -> Tempo
+  - **Logs** -> Loki
+  - **Metrics** -> exposed as a Prometheus scrape endpoint
+- On the RPi host (`192.168.1.201`), OTLP ingest is exposed as:
+  - OTLP/gRPC: `192.168.1.201:4317`
+  - OTLP/HTTP: `http://192.168.1.201:4319` (host-mapped to Alloy's `:4318`)
 
 
 ## OpenTelemetry, Prometheus, and Grafana Sequence Flow
@@ -97,8 +97,7 @@ sequenceDiagram
     participant Client
     participant REST_API as "REST API (FastAPI)"
     participant OTel_SDK as "OpenTelemetry SDK (app)"
-    participant OTel_Collector as "OTel Collector (otel-collector)"
-    participant Grafana_Agent as "Grafana Agent"
+  participant Grafana_Agent as "Grafana Alloy (grafana-agent)"
     participant Prometheus
     participant Tempo
     participant Loki
@@ -107,16 +106,13 @@ sequenceDiagram
     Client->>REST_API: HTTP request
     REST_API->>OTel_SDK: generate spans / metrics / logs
 
-    %% App -> Collector/Agent
-    OTel_SDK->>OTel_Collector: OTLP (traces/metrics/logs)
-    OTel_SDK->>Grafana_Agent: OTLP (traces) or expose metrics endpoint
+  %% App -> Alloy
+  OTel_SDK->>Grafana_Agent: OTLP (traces/metrics/logs)
 
-    %% Collector -> Backends
-    OTel_Collector->>Tempo: Traces (OTLP) / remote_write
-    OTel_Collector->>Prometheus: expose metrics (scrape target) or forward metrics
-    Grafana_Agent->>Tempo: Traces (OTLP)
-    Grafana_Agent->>Prometheus: exposes metrics endpoint (scrape target)
-    Grafana_Agent->>Loki: Logs (push)
+  %% Alloy -> Backends
+  Grafana_Agent->>Tempo: Traces (OTLP)
+  Grafana_Agent->>Prometheus: exposes metrics endpoint (scrape target)
+  Grafana_Agent->>Loki: Logs (push)
 
     %% Queries
     Grafana->>Prometheus: PromQL queries

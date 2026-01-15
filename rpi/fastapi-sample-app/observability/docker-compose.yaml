@@ -1,36 +1,20 @@
-version: '3.8'
-
 services:
-  # OpenTelemetry Collector
+  # Single collector: Grafana Alloy (replaces grafana-agent + otel-collector)
   grafana-agent:
-    image: grafana/agent:latest
+    image: grafana/alloy:latest
     platform: linux/arm64
     container_name: grafana-agent
-    command: ["--config.file=/etc/agent/agent.yaml"]
+    command: ["run", "--server.http.listen-addr=0.0.0.0:8889", "/etc/alloy/config.alloy"]
     volumes:
-      - ./agent.yaml:/etc/agent/agent.yaml:ro
+      - ./agent.alloy:/etc/alloy/config.alloy:ro
     ports:
-      - "4317:4317"
-      - "4318:4318"
-      - "8889:8889"
-    depends_on:
-      - prometheus
-      - loki
-      - tempo
-
-  # OpenTelemetry Collector (otel-collector) - accept OTLP metric pushes from laptops/clients
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    platform: linux/arm64
-    container_name: otel-collector
-    command: ["--config=/etc/otel-collector-config.yaml"]
-    volumes:
-      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
-    ports:
-      - "4319:4318"   # host 4319 -> container OTLP HTTP 4318 (push target for app)
+      - "4317:4317"   # OTLP gRPC (optional)
+      - "4319:4318"   # host 4319 -> container OTLP HTTP 4318 (push target for Mac app)
+      - "8889:8889"   # Prometheus scrape endpoint (and Alloy UI)
     restart: unless-stopped
     depends_on:
       - prometheus
+      - loki
       - tempo
 
   # Prometheus
