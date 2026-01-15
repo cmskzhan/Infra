@@ -1,0 +1,67 @@
+// Grafana Alloy receives OTLP (logs/metrics/traces) and fans out to Loki/Tempo.
+// Metrics are exposed as a Prometheus scrape endpoint on :8889.
+
+otelcol.receiver.otlp "in" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+
+  output {
+    traces  = [otelcol.processor.batch.default.input]
+    metrics = [otelcol.processor.batch.default.input]
+    logs    = [otelcol.processor.batch.default.input]
+  }
+}
+
+otelcol.processor.batch "default" {
+  output {
+    traces  = [otelcol.exporter.otlphttp.tempo.input]
+    metrics = [otelcol.exporter.prometheus.metrics.input]
+    logs    = [otelcol.exporter.loki.logs.input]
+  }
+}
+
+otelcol.exporter.otlphttp "tempo" {
+  client {
+    endpoint = "http://tempo:4318"
+
+    tls {
+      insecure = true
+    }
+  }
+}
+
+otelcol.exporter.loki "logs" {
+  forward_to = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+otelcol.exporter.prometheus "metrics" {
+  // Convert OTLP metrics to Prometheus samples and forward them to a Prometheus
+  // MetricsReceiver.
+  //
+  // NOTE: prometheus.exporter.* components only export `targets` (for scraping)
+  // and do NOT expose a `.receiver` field.
+  forward_to = [prometheus.remote_write.local.receiver]
+}
+
+// Store metrics by remote-writing them to Prometheus.
+// (This avoids needing Alloy to “re-expose” OTLP metrics via /metrics.)
+prometheus.remote_write "local" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}
+
+// Expose converted metrics for Prometheus to scrape via Alloy's HTTP server.
+prometheus.exporter.self "alloy" {
+}
