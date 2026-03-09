@@ -2,9 +2,15 @@ flowchart TD
     Client --> REST_API
     REST_API --> OTel_SDK
     OTel_SDK --> OTel_Collector
+    OTel_SDK --> Grafana_Agent
     OTel_Collector --> Prometheus
+    OTel_Collector --> Tempo
+    Grafana_Agent --> Prometheus
+    Grafana_Agent --> Tempo
+    Grafana_Agent --> Loki
     Prometheus --> Grafana
-    Grafana --> Prometheus
+    Tempo --> Grafana
+    Loki --> Grafana
 
 
 %% sequenceDiagram
@@ -12,5 +18,8 @@ flowchart TD
 %%     participant REST_API as REST API
 %%     participant OTel_SDK as OpenTelemetry SDK
 %%     participant OTel_Collector as OpenTelemetry Collector
+%%     participant OTel_Agent as Grafana Agent
 %%     participant Prometheus
+%%     participant Tempo
+%%     participant Loki
 %%     participant Grafana
