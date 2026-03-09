@@ -121,3 +121,17 @@ alias playwright-mcp='docker run -d -i --rm --init --pull=always \
   mcr.microsoft.com/playwright/mcp \
   cli.js --headless --browser chromium --no-sandbox \
   --host 0.0.0.0 --port 8931 --allowed-hosts '\''*'\'' --allowed-origins '\''*'\'''
+
+
+openBrowser-mcp() {
+  read -sp "Enter GOOGLE_API_KEY: " google_api_key
+  echo
+  docker run -d --pull=always \
+    --name openBrowser-bridge \
+    -p 8932:8931 \
+    -e GOOGLE_API_KEY="$google_api_key" \
+    -e OPENBROWSER_MODEL="gemini-3.1-pro" \
+    ghcr.io/open-webui/mcpo:main \
+    --port 8931 \
+    -- uvx openbrowser-ai --mcp
+}
